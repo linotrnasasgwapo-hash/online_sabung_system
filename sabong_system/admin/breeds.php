@@ -1,0 +1,19 @@
+<?php
+// admin/breeds.php
+require_once '../includes/auth.php'; requireAdmin(); require_once '../config/db.php'; $db=getDB(); $msg='';
+if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['save_breed'])){$id=(int)($_POST['breed_id']??0);$nm=clean($db,$_POST['breed_name']??'');$or=clean($db,$_POST['origin']??'');$ds=clean($db,$_POST['description']??'');if($id){$db->query("UPDATE breeds SET breed_name='$nm',origin='$or',description='$ds' WHERE breed_id=$id");$msg='Breed updated.';}else{$db->query("INSERT INTO breeds(breed_name,origin,description)VALUES('$nm','$or','$ds')");$msg='Breed added.';}}
+if(isset($_GET['delete'])){$db->query("DELETE FROM breeds WHERE breed_id=".(int)$_GET['delete']);header('Location: breeds.php?msg=deleted');exit;}
+$rows=$db->query("SELECT * FROM breeds ORDER BY breed_name");
+?><!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Breeds — Saraet Cockpit Arena</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Crimson+Pro:wght@400;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="../assets/admin.css"></head>
+<body><?php include '../includes/sidebar.php';?><main class="main"><div class="page-hd"><h1>📖 Breeds Reference</h1><button class="btn-primary btn-gold" onclick="openModal(0)">+ Add Breed</button></div>
+<?php if($msg||isset($_GET['msg'])):?><div class="msg-success">✅ <?=htmlspecialchars($msg?:'Done.')?></div><?php endif;?>
+<div class="card"><div class="card-hd"><h3>Gamecock Breeds</h3><span style="font-size:.75rem;color:var(--muted)"><?=$rows->num_rows?> breeds</span></div>
+<div class="tbl-wrap"><table><thead><tr><th>ID</th><th>Breed Name</th><th>Origin</th><th>Description</th><th>Actions</th></tr></thead><tbody>
+<?php while($b=$rows->fetch_assoc()):?>
+<tr><td style="font-family:'Cinzel',serif;font-weight:700;color:var(--gold)">#<?=$b['breed_id']?></td><td class="t-name"><?=htmlspecialchars($b['breed_name'])?></td><td class="t-sub"><?=htmlspecialchars($b['origin']??'—')?></td><td class="t-sub"><?=htmlspecialchars(substr($b['description']??'—',0,80))?></td>
+<td style="display:flex;gap:.3rem"><button class="btn-xs bx-edit" onclick="openModal(<?=$b['breed_id']?>,'<?=addslashes($b['breed_name'])?>','<?=addslashes($b['origin']??'')?>','<?=addslashes($b['description']??'')?>')">Edit</button><a href="breeds.php?delete=<?=$b['breed_id']?>" class="btn-xs bx-delete" onclick="return confirm('Delete?')">Del</a></td></tr>
+<?php endwhile;?>
+</tbody></table></div></div></main>
+<div class="overlay" id="breedModal"><div class="modal"><h3 id="bm-title">Add Breed</h3><form method="POST"><input type="hidden" name="save_breed" value="1"><input type="hidden" name="breed_id" id="bm-id"><div class="field"><label>Breed Name *</label><input name="breed_name" id="bm-nm" required></div><div class="row2"><div class="field"><label>Origin</label><input name="origin" id="bm-or" placeholder="USA, Philippines..."></div></div><div class="field"><label>Description</label><textarea name="description" id="bm-ds" rows="3"></textarea></div><div class="modal-btns"><button type="button" class="modal-cancel" onclick="document.getElementById('breedModal').classList.remove('open')">Cancel</button><button type="submit" class="modal-save">Save</button></div></form></div></div>
+<script>function openModal(id,nm='',or='',ds=''){document.getElementById('bm-title').textContent=id?'Edit Breed':'Add Breed';document.getElementById('bm-id').value=id;document.getElementById('bm-nm').value=nm;document.getElementById('bm-or').value=or;document.getElementById('bm-ds').value=ds;document.getElementById('breedModal').classList.add('open');}document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}));</script>
+</body></html>
